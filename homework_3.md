@@ -17,12 +17,6 @@ Bin Yang
 
     library(patchwork)
 
-    knitr::opts_chunk$set(
-      fig.width = 6,
-      fig.asp = .6,
-      out.width = "90%"
-    )
-
     theme_set(theme_minimal() + theme(legend.position = "bottom"))
 
     options(
@@ -80,7 +74,7 @@ Let’s make a plot
         geom_point() + 
         theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
-<img src="homework_3_files/figure-gfm/unnamed-chunk-3-1.png" width="90%" />
+![](homework_3_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 Let’s make a table!!
 
@@ -240,7 +234,7 @@ Saturday in week 4 and 5, compared to other values.
     ## Warning: Continuous limits supplied to discrete scale.
     ## Did you mean `limits = factor(...)` or `scale_*_continuous()`?
 
-<img src="homework_3_files/figure-gfm/unnamed-chunk-9-1.png" width="90%" />
+![](homework_3_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 We observed that activity counts generally rise from midnight to 12 pm,
 decrease in the afternoon, spike after 8pm and finally decrease after
@@ -365,7 +359,7 @@ don’t observe any snowfall.
 
     ## `summarise()` regrouping output by 'id', 'year' (override with `.groups` argument)
 
-<img src="homework_3_files/figure-gfm/unnamed-chunk-14-1.png" width="90%" />
+![](homework_3_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 From this plot, we observed several extreme values, such as in 1982,
 1996 January and 1988 July. Otherwise, we don’t see any clear trends in
@@ -400,4 +394,4 @@ the plot.
 
     ## Warning: Removed 30 rows containing missing values (geom_segment).
 
-<img src="homework_3_files/figure-gfm/unnamed-chunk-15-1.png" width="90%" />
+![](homework_3_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
