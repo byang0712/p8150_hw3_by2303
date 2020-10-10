@@ -1,0 +1,250 @@
+---
+title: "Homework 3"
+output: github_document
+author: Bin Yang
+---
+
+```{r set up}
+library(tidyverse)
+library(patchwork)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+## Problem 1
+```{r}
+library(p8105.datasets)
+data("instacart")
+```
+
+This dataset contains `r nrow(instacart)` rows and ... columns. 
+
+Observations are the level of items in orders by user. There are user / order variables -- user ID, order ID, order day, and order hour. There are also item variables -- name, aisle, department, and some numeric codes. 
+
+How many aisles, and which are most items from?
+
+```{r}
+instacart %>% 
+	count(aisle) %>% 
+	arrange(desc(n))
+```
+
+
+Let's make a plot
+
+```{r}
+instacart %>% 
+	count(aisle) %>% 
+	filter(n > 10000) %>% 
+	mutate(
+		aisle = factor(aisle),
+		aisle = fct_reorder(aisle, n)
+	) %>% 
+	ggplot(aes(x = aisle, y = n)) + 
+	geom_point() + 
+	theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+
+Let's make a table!!
+
+```{r}
+instacart %>% 
+	filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>% 
+	group_by(aisle) %>% 
+	count(product_name) %>% 
+	mutate(rank = min_rank(desc(n))) %>% 
+	filter(rank < 4) %>% 
+	arrange(aisle, rank) %>% 
+	knitr::kable()
+```
+
+
+Apples vs ice cream..
+
+```{r}
+instacart %>% 
+	filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
+	group_by(product_name, order_dow) %>% 
+	summarize(mean_hour = mean(order_hour_of_day)) %>% 
+	pivot_wider(
+		names_from = order_dow,
+		values_from = mean_hour
+	)
+```
+
+## Problem 2
+
+Load in the accelerometer data and tidy the data.
+```{r}
+accel_data <- 
+  read_csv("./data/accel_data.csv") %>% 
+  pivot_longer(                           
+    activity.1:activity.1440,
+    names_to = "minute",
+    values_to = "activity_count",
+    names_prefix = "activity.") %>%
+  mutate(
+    weekend = case_when(
+    day == "Saturday" | "day" == "Sunday"  ~ 1,
+    TRUE ~ 0)) %>%
+  mutate(
+    minute = as.numeric(minute),
+    week = factor(week),
+    weekend = factor(weekend),
+    day = factor(day, 
+                 levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+    ) %>% 
+  select(week:day, weekend, everything())
+```
+
+```{r}
+skimr::skim_without_charts(accel_data)
+```
+
+Data description:
+This dataset contains information regarding fives weeks of accelerometer data collected on a 63 year-old male. The dataset contains `r nrow(accel_data)` observations and `r ncol(accel_data)` variables recording the activity count for each minute in this five weeks period with no NA value. "week", "day_id", "day" ,"minute"records the week number, day number, day and minitue of the experiment. "weekend" is a binary variable that takes value 0 if that day is a weekday, or 1 if that day is weekend. "activity_count" is the activity count for a given mintue in the experiment. 
+
+```{r}
+accel_data %>% 
+  group_by(week, day) %>% 
+  summarise(
+    total_activity = sum(activity_count)
+  ) %>% 
+  pivot_wider(
+    names_from = "day",
+    values_from = "total_activity"
+  ) %>% 
+  knitr::kable(digits = 1)
+```
+
+After examining the table, we are not able to identify any clear trends. Generally this person has higher activity counts in the first few days of the week. We noticed that the activity counts are extremely low on Saturday in week 4 and 5, compared to other values. 
+
+```{r}
+accel_data %>% 
+  ggplot(aes(x = minute, y = activity_count), alpha = 0.3) + 
+  geom_line(aes(color = day)) +
+  labs(title = "Accelerometers Records over 5 Weeks",
+       x = "Hours", 
+       y = "Activity Count") +
+  scale_x_discrete(
+    limit = c(240, 480, 720, 960, 1200, 1440),
+    labels = c("4", "8", "12", "16", "20", "24")
+    )
+```
+
+We observed that activity counts generally rise from midnight to 12 pm, decrease in the afternoon, spike after 8pm and finally decrease after roughly 10 pm. Generally speaking, this person has higher activity level in the weekdays compared to weekends. 
+
+## Problem 3
+```{r}
+library(p8105.datasets)
+data("ny_noaa")
+```
+
+```{r}
+skimr::skim(ny_noaa)
+```
+
+This dataset contains weather information for all New York state weather stations from January 1, 1981 through December 31, 2010. It has `r nrow(ny_noaa)` observations and `r ncol(ny_noaa)` variables. Specifically, the variables contains following information:  
+id: Weather station ID  
+date: Date of observation  
+prcp: Precipitation (tenths of mm)  
+snow: Snowfall (mm)  
+snwd: Snow depth (mm)  
+tmax: Maximum temperature (tenths of degrees C)  
+tmin: Minimum temperature (tenths of degrees C).  
+There are many miss values in the dataset. Specifically, There are around 40% missing values in "tmax" and "tmin", 20% missing values in "snwd", 15% missing values in "snow" and 6% missing values in "prcp". Given such large amount of missing values, we should probably drop these missing values prior to analysis.
+
+```{r}
+ny_noaa_tidy = 
+  ny_noaa %>% 
+  separate(date, into = c("year", "month", "day"), sep = "-") %>% 
+  mutate(
+    tmax = as.numeric(tmax),
+    tmin = as.numeric(tmin)
+  ) %>% 
+  mutate(
+    prcp = prcp/10,
+    tmax = tmax/10,
+    tmin = tmin/10
+  )
+```
+
+```{r}
+ny_noaa_tidy %>% 
+  count(snow, name = "snow_count") %>% 
+  arrange(desc(snow_count)) %>% 
+  head(10) %>% 
+  knitr::kable()
+```
+
+The most commonly observed value for snowfall is 0 as most of days we don't observe any snowfall. 
+
+
+```{r}
+ny_noaa_tidy %>%  
+  drop_na() %>% 
+  filter(month %in% c("01","07")) %>% 
+  group_by(id, year, month) %>% 
+  summarise(
+    avg_tmax = mean(tmax)
+  ) %>%
+  ggplot(aes(x = as.numeric(year), y = avg_tmax, color = id)) +
+  geom_point() + geom_line() +
+  labs(
+    title = "Average Max Temperature",
+    x = "Year",
+    y = "Temperature (c)"
+  ) +
+  scale_x_continuous(breaks = 1981:2010) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 90, hjust = 0)) +
+  facet_grid(. ~ month, labeller = labeller(month = c("01" = "January", "07" = "July"))) 
+```
+
+
+From this plot, we observed several extreme values, such as in 1982, 1996 January and 1988 July. Otherwise, we don't see any clear trends in the plot.
+
+```{r}
+plot1 =
+  ny_noaa_tidy %>%  
+  drop_na() %>% 
+  ggplot(aes(x = tmax, y = tmin)) + 
+  labs(
+    title = "Hex Plot for Max and Min temperature",
+    x = "Max Temperature (c)", 
+    y = "Min Temperature (c)"
+  ) + 
+  geom_hex()
+
+plot2 = 
+  ny_noaa_tidy %>%  
+  drop_na() %>% 
+  filter(snow > 0 & snow < 100) %>% 
+  ggplot(aes(x = year, y = snow)) + 
+  geom_violin() + 
+  stat_summary(fun = "median", color = "blue") + 
+  labs(
+    title = "Violin Plot for Snowfall",
+    x = "Year",
+    y = "Snowfall (mm)"
+  ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 0))
+
+plot1 / plot2
+```
+
